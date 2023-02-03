@@ -12,7 +12,10 @@ class EnvironmentVariables {
   NODE_ENV: Environment;
 
   @IsNumber()
-  PORT: number;
+  APP_PORT: number;
+
+  @IsNumber()
+  WS_PORT: number;
 
   @IsString()
   POSTGRES_HOST: string;
