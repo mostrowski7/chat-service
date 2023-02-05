@@ -18,6 +18,9 @@ class EnvironmentVariables {
   WS_PORT: number;
 
   @IsString()
+  JWT_SECRET: string;
+
+  @IsString()
   POSTGRES_HOST: string;
 
   @IsNumber()
