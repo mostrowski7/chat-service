@@ -1,8 +1,16 @@
-import { WebSocketGateway } from '@nestjs/websockets';
-import { OnGatewayConnection } from '@nestjs/websockets/interfaces';
+import {
+  SubscribeMessage,
+  WebSocketGateway,
+  OnGatewayConnection,
+  WsResponse,
+  MessageBody,
+  ConnectedSocket,
+} from '@nestjs/websockets';
 import { Socket } from 'socket.io';
 import { config } from 'dotenv';
 import { AuthService } from '../auth/auth.service';
+import { UseGuards } from '@nestjs/common';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 
 config();
 
@@ -32,5 +40,23 @@ export class EventsGateway implements OnGatewayConnection {
     }
 
     client.join(roomId);
+  }
+
+  /**
+   * This method emits a user message to the rest room members
+   * @param client Socket client
+   * @returns A object with event type and status
+   */
+  @UseGuards(JwtAuthGuard)
+  @SubscribeMessage('room-message')
+  handleRoomMessage(
+    @MessageBody() data: string,
+    @ConnectedSocket() client: Socket,
+  ): WsResponse<any> {
+    const roomId = client.handshake.query?.roomId;
+
+    client.to(roomId).emit('room-message', data);
+
+    return { event: 'room-message', data: { status: 'ok' } };
   }
 }
