@@ -35,7 +35,7 @@ export class EventsGateway implements OnGatewayConnection {
     const payload = this.authService.verifyAccessToken(accessToken);
 
     if (!payload) {
-      return client._error('Unauthenticated');
+      return client.disconnect();
     }
 
     client.join(roomId);
