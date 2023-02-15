@@ -5,7 +5,8 @@ export async function up(knex: Knex): Promise<void> {
         CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
         CREATE TABLE rooms (
             id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
-            user_id UUID NOT NULL,
+            user_id UUID NOT NULL UNIQUE,
+            username text NOT NULL UNIQUE,
             created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
         )
     `);
