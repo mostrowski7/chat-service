@@ -2,7 +2,6 @@ import {
   SubscribeMessage,
   WebSocketGateway,
   OnGatewayConnection,
-  WsResponse,
   MessageBody,
   ConnectedSocket,
 } from '@nestjs/websockets';
@@ -10,7 +9,7 @@ import { Socket } from 'socket.io';
 import { config } from 'dotenv';
 import { AuthService } from '../auth/auth.service';
 import { UseGuards } from '@nestjs/common';
-import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { WsAuthGuard } from '../auth/ws-auth.guard';
 
 config();
 
@@ -36,7 +35,7 @@ export class EventsGateway implements OnGatewayConnection {
     const payload = this.authService.verifyAccessToken(accessToken);
 
     if (!payload) {
-      return client._error('Unauthenticated');
+      return client.disconnect();
     }
 
     client.join(roomId);
@@ -47,16 +46,14 @@ export class EventsGateway implements OnGatewayConnection {
    * @param client Socket client
    * @returns A object with event type and status
    */
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(WsAuthGuard)
   @SubscribeMessage('room-message')
-  handleRoomMessage(
+  emitRoomMessage(
     @MessageBody() data: string,
     @ConnectedSocket() client: Socket,
-  ): WsResponse<any> {
+  ) {
     const roomId = client.handshake.query?.roomId;
 
     client.to(roomId).emit('room-message', data);
-
-    return { event: 'room-message', data: { status: 'ok' } };
   }
 }

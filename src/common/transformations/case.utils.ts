@@ -15,3 +15,17 @@ export const camelToSnakeCase = (text: string) => {
 
   return text.replaceAll(/[A-Z]/g, (match) => '_' + match.toLowerCase());
 };
+
+export const transformObjectPropertiesCase = (
+  object: { [k: string]: string },
+  method: (property: string) => string,
+): { [k: string]: string } => {
+  const newObject = {};
+
+  for (const [key, value] of Object.entries(object)) {
+    const changedKey = method(`${key}`);
+    newObject[changedKey] = value;
+  }
+
+  return newObject;
+};
