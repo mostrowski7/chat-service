@@ -6,6 +6,8 @@ export async function up(knex: Knex): Promise<void> {
         CREATE TABLE messages (
             id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
             room_id uuid NOT NULL,
+            user_id uuid NOT NULL,
+            username text NOT NULL,
             text TEXT NOT NULL,
             created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
             CONSTRAINT fk_room
