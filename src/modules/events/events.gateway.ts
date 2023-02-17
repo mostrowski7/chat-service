@@ -10,6 +10,8 @@ import { config } from 'dotenv';
 import { AuthService } from '../auth/auth.service';
 import { UseGuards } from '@nestjs/common';
 import { WsAuthGuard } from '../auth/ws-auth.guard';
+import { SocketWithTokenPayload } from './events.type';
+import { MessagesService } from '../messages/messages.service';
 
 config();
 
@@ -21,7 +23,10 @@ export class EventsGateway implements OnGatewayConnection {
   /**
    * @ignore
    */
-  constructor(private readonly authService: AuthService) {}
+  constructor(
+    private readonly authService: AuthService,
+    private readonly messagesService: MessagesService,
+  ) {}
 
   /**
    * This method handles user connection to WebSocket server
@@ -48,12 +53,19 @@ export class EventsGateway implements OnGatewayConnection {
    */
   @UseGuards(WsAuthGuard)
   @SubscribeMessage('room-message')
-  emitRoomMessage(
-    @MessageBody() data: string,
-    @ConnectedSocket() client: Socket,
+  async emitRoomMessage(
+    @MessageBody() data: { message: string; roomId: string },
+    @ConnectedSocket() client: SocketWithTokenPayload,
   ) {
-    const roomId = client.handshake.query?.roomId;
+    const { message, roomId } = data;
+    const { sub, username } = client.payload;
+    client.to(roomId).emit('room-message', message);
 
-    client.to(roomId).emit('room-message', data);
+    await this.messagesService.create({
+      roomId,
+      userId: sub,
+      username,
+      text: message,
+    });
   }
 }
