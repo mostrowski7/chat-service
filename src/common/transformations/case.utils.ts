@@ -20,6 +20,11 @@ export const transformObjectPropertiesCase = (
   object: { [k: string]: string },
   method: (property: string) => string,
 ): { [k: string]: string } => {
+  if (object.constructor !== Object || Object.entries(object).length === 0)
+    throw new InternalServerErrorException(
+      'Input data must be an object with at least one key-value pair',
+    );
+
   const newObject = {};
 
   for (const [key, value] of Object.entries(object)) {
