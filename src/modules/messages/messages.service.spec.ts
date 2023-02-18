@@ -1,5 +1,6 @@
 import { NotFoundException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
+import { PaginationDto } from 'src/common/dto/pagination.dto';
 import DatabaseErrorCode from '../database/database.errors';
 import { runQueryMock } from '../database/database.mock';
 import DatabaseService from '../database/database.service';
@@ -14,9 +15,15 @@ describe('MessagesService', () => {
     text: 'message',
     username: 'username',
   };
+  const roomId = createMessageDto.roomId;
+  const messageRow = {
+    id: '3062cd7c-95aa-4c75-a3f0-6c7ef8750d9c',
+    createdAt: Date.now(),
+    ...createMessageDto,
+  };
   const uuidRegex =
     /[a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-[89aAbB][a-f0-9]{3}-[a-f0-9]{12}/;
-  let messagesService: MessagesService;
+  let messagesService: MessagesService, pagination: PaginationDto;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -35,17 +42,15 @@ describe('MessagesService', () => {
     messagesService = module.get(MessagesService);
   });
 
+  afterEach(() => {
+    jest.clearAllMocks();
+  });
+
   describe('create method', () => {
     describe('when successfully create message', () => {
       it('should return created message object', async () => {
         runQueryMock.mockResolvedValue({
-          rows: [
-            {
-              id: '3062cd7c-95aa-4c75-a3f0-6c7ef8750d9c',
-              createdAt: Date.now(),
-              ...createMessageDto,
-            },
-          ],
+          rows: [messageRow],
         });
 
         const result = await messagesService.create(createMessageDto);
@@ -70,6 +75,61 @@ describe('MessagesService', () => {
         await expect(messagesService.create(createMessageDto)).rejects.toThrow(
           new NotFoundException('Room not found'),
         );
+      });
+    });
+  });
+
+  describe('getMessagesByRoomId method', () => {
+    beforeEach(() => {
+      pagination = {
+        page: 1,
+        itemsPerPage: 1,
+      };
+    });
+    describe('when room exists', () => {
+      describe('and when not found messages', () => {
+        it('should return empty array', async () => {
+          runQueryMock.mockResolvedValue({
+            rows: [],
+          });
+
+          const result = await messagesService.getMessagesByRoomId({
+            roomId,
+            pagination,
+          });
+
+          expect(result).toEqual([]);
+        });
+      });
+
+      describe('and when found messages', () => {
+        it('should return messages array', async () => {
+          runQueryMock.mockResolvedValue({
+            rows: [messageRow],
+          });
+
+          const result = await messagesService.getMessagesByRoomId({
+            roomId,
+            pagination,
+          });
+
+          expect(result).toEqual(expect.arrayContaining([messageRow]));
+        });
+      });
+    });
+
+    describe('when room not found', () => {
+      it('should return not found exception', async () => {
+        runQueryMock.mockRejectedValue({
+          code: DatabaseErrorCode.ForeignKeyViolation,
+        });
+
+        await expect(
+          messagesService.getMessagesByRoomId({
+            roomId,
+            pagination,
+          }),
+        ).rejects.toThrow(new NotFoundException('Room not found'));
       });
     });
   });
