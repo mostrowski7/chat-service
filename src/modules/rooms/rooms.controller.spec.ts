@@ -1,5 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { INestApplication } from '@nestjs/common';
+import { INestApplication, ValidationPipe } from '@nestjs/common';
 import { JwtModule, JwtService } from '@nestjs/jwt';
 import { ConfigModule } from '@nestjs/config';
 import * as request from 'supertest';
@@ -9,6 +9,8 @@ import { JwtStrategy } from '../auth/jwt.strategy';
 import { RoomsService } from './rooms.service';
 import { RoomsRepository } from './rooms.repository';
 import { RoomsController } from './rooms.controller';
+import { MessagesService } from '../messages/messages.service';
+import { MessagesRepository } from '../messages/messages.repository';
 
 describe('RoomsController', () => {
   const runQueryMock = jest.fn();
@@ -34,6 +36,8 @@ describe('RoomsController', () => {
         JwtStrategy,
         RoomsService,
         RoomsRepository,
+        MessagesService,
+        MessagesRepository,
         {
           provide: DatabaseService,
           useValue: {
@@ -44,10 +48,15 @@ describe('RoomsController', () => {
     }).compile();
 
     app = module.createNestApplication();
+    app.useGlobalPipes(new ValidationPipe());
     await app.init();
 
     const jwtService = module.get<JwtService>(JwtService);
     accessToken = jwtService.sign(payload);
+  });
+
+  afterEach(() => {
+    jest.clearAllMocks();
   });
 
   describe('POST /rooms', () => {
@@ -105,6 +114,72 @@ describe('RoomsController', () => {
       it('should return status 401', async () => {
         const response = await request(app.getHttpServer())
           .post('/rooms')
+          .set('Authorization', 'Bearer invalid');
+
+        expect(response.statusCode).toBe(401);
+      });
+    });
+  });
+
+  describe('GET /rooms/id/messages', () => {
+    const roomId = 'e2771ffe-8834-4c16-ba1b-9097e5a9f1d9';
+
+    describe('when found messages', () => {
+      const messageRows = [
+        {
+          username: 'username',
+          text: 'text',
+        },
+      ];
+
+      beforeEach(() => {
+        runQueryMock.mockResolvedValue({
+          rows: messageRows,
+        });
+      });
+
+      it('should return status 200', async () => {
+        const response = await request(app.getHttpServer())
+          .get(`/rooms/${roomId}/messages`)
+          .set('Authorization', `Bearer ${accessToken}`);
+
+        expect(response.status).toBe(200);
+      });
+
+      it('should return messages array', async () => {
+        const response = await request(app.getHttpServer())
+          .get(`/rooms/${roomId}/messages`)
+          .set('Authorization', `Bearer ${accessToken}`);
+
+        expect(response.body).toEqual(expect.arrayContaining(messageRows));
+      });
+    });
+
+    describe('when roomId is invalid', () => {
+      it('should return status 400', async () => {
+        const response = await request(app.getHttpServer())
+          .get('/rooms/1/messages')
+          .set('Authorization', `Bearer ${accessToken}`);
+
+        expect(response.statusCode).toBe(400);
+      });
+    });
+
+    describe('when query param is invalid', () => {
+      it('should return status 400', async () => {
+        const response = await request(app.getHttpServer())
+          .get(`/rooms/${roomId}/messages`)
+          .set('Authorization', `Bearer ${accessToken}`)
+          .query({ page: 'a' });
+
+        expect(response.statusCode).toBe(400);
+      });
+    });
+
+    describe('when access token is invalid', () => {
+      it('should return status 401', async () => {
+        const response = await request(app.getHttpServer())
+          .get(`/rooms/${roomId}/messages`)
           .set('Authorization', 'Bearer invalid');
 
         expect(response.statusCode).toBe(401);
