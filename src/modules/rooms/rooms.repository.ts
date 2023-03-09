@@ -1,4 +1,8 @@
-import { ConflictException, Injectable } from '@nestjs/common';
+import {
+  ConflictException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { plainToInstance } from 'class-transformer';
 import {
   snakeToCamelCase,
@@ -38,5 +42,34 @@ export class RoomsRepository {
 
       throw error;
     }
+  }
+
+  async findById(id: string): Promise<Room> {
+    const databaseResponse = await this.databaseService.runQuery(
+      `
+        SELECT id, user_id as "userId", username, created_at as "createdAt"
+        FROM rooms
+        WHERE id = $1
+      `,
+      [id],
+    );
+
+    if (databaseResponse.rowCount === 0)
+      throw new NotFoundException('Room not found');
+
+    return plainToInstance(Room, databaseResponse?.rows[0]);
+  }
+
+  async getById(id: string): Promise<Room> {
+    const databaseResponse = await this.databaseService.runQuery(
+      `
+        SELECT id, user_id as "userId", username, created_at as "createdAt"
+        FROM rooms
+        WHERE id = $1
+      `,
+      [id],
+    );
+
+    return plainToInstance(Room, databaseResponse?.rows[0]);
   }
 }

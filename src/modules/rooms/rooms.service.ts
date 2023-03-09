@@ -10,4 +10,12 @@ export class RoomsService {
   async create(createRoomData: CreateRoomDto): Promise<Room> {
     return await this.roomsRepository.create(createRoomData);
   }
+
+  async findById(id: string): Promise<Room> {
+    return await this.roomsRepository.findById(id);
+  }
+
+  async getById(id: string): Promise<Room> {
+    return await this.roomsRepository.getById(id);
+  }
 }

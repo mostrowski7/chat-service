@@ -25,6 +25,7 @@ export class MessagesRepository {
         `
             INSERT INTO messages (room_id, user_id, username, text)
             VALUES ($1, $2, $3, $4)
+            RETURNING *
         `,
         [roomId, userId, username, text],
       );
