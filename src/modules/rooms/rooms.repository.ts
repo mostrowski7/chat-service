@@ -59,4 +59,17 @@ export class RoomsRepository {
 
     return plainToInstance(Room, databaseResponse?.rows[0]);
   }
+
+  async getById(id: string): Promise<Room> {
+    const databaseResponse = await this.databaseService.runQuery(
+      `
+        SELECT id, user_id as "userId", username, created_at as "createdAt"
+        FROM rooms
+        WHERE id = $1
+      `,
+      [id],
+    );
+
+    return plainToInstance(Room, databaseResponse?.rows[0]);
+  }
 }
