@@ -10,6 +10,8 @@ import { AuthService } from '../auth/auth.service';
 import { MessagesService } from '../messages/messages.service';
 import { runQueryMock } from '../database/database.mock';
 import { MessagesRepository } from '../messages/messages.repository';
+import { RoomsService } from '../rooms/rooms.service';
+import { RoomsRepository } from '../rooms/rooms.repository';
 
 describe('EventsGateway', () => {
   const messageRow = {
@@ -43,6 +45,8 @@ describe('EventsGateway', () => {
         AuthService,
         MessagesService,
         MessagesRepository,
+        RoomsService,
+        RoomsRepository,
         {
           provide: DatabaseService,
           useValue: {
@@ -98,13 +102,12 @@ describe('EventsGateway', () => {
     socket1.on('connect', () => {
       socket1.emit('room-message', {
         message: 'message',
-        roomId,
       });
     });
 
     socket2.on('connect', () => {
       socket2.on('room-message', (data) => {
-        expect(data).toBe('message');
+        expect(data.message).toBe('message');
 
         socket1.disconnect();
         socket2.disconnect();
