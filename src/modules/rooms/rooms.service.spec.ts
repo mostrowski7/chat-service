@@ -110,4 +110,32 @@ describe('RoomsService', () => {
       });
     });
   });
+
+  describe('getById method', () => {
+    const roomId = 'f8e3b955-1c05-4a9e-8594-6f548a33434b';
+
+    describe('when successfully found', () => {
+      it('should return room object', async () => {
+        runQueryMock.mockResolvedValue({
+          rows: [
+            {
+              id: 'd2771ffe-8834-4c16-ba1b-9097e5a9f1d2',
+              userId: createRoomDto.userId,
+              username: createRoomDto.username,
+              createdAt: Date.now(),
+            },
+          ],
+        });
+
+        const result = await roomsService.getById(roomId);
+
+        expect(result).toMatchObject({
+          id: expect.stringMatching(uuidRegex),
+          userId: createRoomDto.userId,
+          username: createRoomDto.username,
+          createdAt: expect.any(Number),
+        });
+      });
+    });
+  });
 });
