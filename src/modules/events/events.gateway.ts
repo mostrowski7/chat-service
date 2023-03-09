@@ -12,6 +12,7 @@ import { UseGuards } from '@nestjs/common';
 import { WsAuthGuard } from '../auth/ws-auth.guard';
 import { SocketWithTokenPayload } from './events.type';
 import { MessagesService } from '../messages/messages.service';
+import { RoomsService } from '../rooms/rooms.service';
 
 config();
 
@@ -26,6 +27,7 @@ export class EventsGateway implements OnGatewayConnection {
   constructor(
     private readonly authService: AuthService,
     private readonly messagesService: MessagesService,
+    private readonly roomsService: RoomsService,
   ) {}
 
   /**
@@ -33,13 +35,15 @@ export class EventsGateway implements OnGatewayConnection {
    * - it checks access and adds client to room
    * @param client Socket client
    */
-  handleConnection(client: Socket) {
+  async handleConnection(client: Socket) {
     const accessToken = client.handshake.auth?.accessToken;
-    const roomId = client.handshake.query?.roomId;
+    const roomId = client.handshake.query?.roomId as string;
 
     const payload = this.authService.verifyAccessToken(accessToken);
 
-    if (!payload) {
+    const room = await this.roomsService.getById(roomId);
+
+    if (!payload || !room) {
       return client.disconnect();
     }
 
@@ -54,12 +58,14 @@ export class EventsGateway implements OnGatewayConnection {
   @UseGuards(WsAuthGuard)
   @SubscribeMessage('room-message')
   async emitRoomMessage(
-    @MessageBody() data: { message: string; roomId: string },
+    @MessageBody() data: { message: string },
     @ConnectedSocket() client: SocketWithTokenPayload,
   ) {
-    const { message, roomId } = data;
+    const { message } = data;
     const { sub, username } = client.payload;
-    client.to(roomId).emit('room-message', message);
+    const roomId = [...client.rooms].pop();
+
+    client.to(roomId).emit('room-message', { userId: sub, username, message });
 
     await this.messagesService.create({
       roomId,
