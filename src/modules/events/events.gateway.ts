@@ -32,18 +32,15 @@ export class EventsGateway implements OnGatewayConnection {
 
   /**
    * This method handles user connection to WebSocket server
-   * - it checks access and adds client to room
+   * - it adds client to room
    * @param client Socket client
    */
   async handleConnection(client: Socket) {
-    const accessToken = client.handshake.auth?.accessToken;
     const roomId = client.handshake.query?.roomId as string;
-
-    const payload = this.authService.verifyAccessToken(accessToken);
 
     const room = await this.roomsService.getById(roomId);
 
-    if (!payload || !room) {
+    if (!room) {
       return client.disconnect();
     }
 
