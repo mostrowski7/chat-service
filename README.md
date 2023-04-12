@@ -1,32 +1,47 @@
-## Description
+## Table of contents
+* [General info](#general-info)
+* [Technologies](#technologies)
+* [Setup](#setup)
+* [Features](#features)
 
-Chat Service
+## General info
+Simple chat service using Socket.io
 
-## Run
-
-```bash
-
+## Technologies
+* NestJS
+* Knex migrations
+* PostgreSQL raw queries
+* Jest
+* Docker
+* CircleCI
+	
+## Setup
+### Run
+```
 # Build
 $ docker-compose build
 
 # Start
 $ docker-compose up -d
-
 ```
 
-## Migration
-
-```bash
-
+### Migration
+```
 $ docker-compose run api npm run migration
-
 ```
 
-## Test
-
-```bash
-
+### Test
+```
 $ docker-compose run api npm run test
-
 ```
 
+## Features
+* Validates user token
+* Connects to room
+* Sends a message as user
+* Retrieves messages from specific room
+
+### To Do:
+* Typing
+* Private messages
+* Commands
